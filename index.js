@@ -214,6 +214,61 @@ async function run() {
     })
 
     
+// Save a room in database
+app.post('/rooms', async (req, res) => {
+  const room = req.body
+  const result = await roomsCollection.insertOne(room)
+  res.send(result)
+})
+
+
+ // Generate client secret for stripe payment
+ app.post('/create-payment-intent', async (req, res) => {
+  const { price } = req.body
+  const amount = parseInt(price * 100)
+  if (!price || amount < 1) return
+  const { client_secret } = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: 'usd',
+    payment_method_types: ['card'],
+  })
+  res.send({ clientSecret: client_secret })
+})
+
+  // Save booking info in booking collection
+  app.post('/bookings', async (req, res) => {
+    const booking = req.body
+    const result = await bookingsCollection.insertOne(booking)
+    // Send Email.....
+    if (result.insertedId) {
+      // To guest
+      sendEmail(booking.guest.email, {
+        subject: 'Booking Successful!',
+        message: `Room Ready, chole ashen vai, apnar Transaction Id: ${booking.transactionId}`,
+      })
+     
+
+      // To Host
+      sendEmail(booking.host, {
+        subject: 'Your room got booked!',
+        message: `Room theke vago. ${booking.guest.name} ashtese.....`,
+      })
+    }
+    res.send(result)
+  })
+
+ 
+
+  app.delete('/bookings/:id',async(req,res)=>{
+    const id=req.params.id
+     console.log(id)
+     const query = {_id: new ObjectId (id)}
+        const result = await bookingsCollection.deleteOne(query)
+       res.send(result);
+      })
+
+
+    
 
 
     // Send a ping to confirm a successful connection
