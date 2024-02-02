@@ -266,6 +266,65 @@ app.post('/rooms', async (req, res) => {
         const result = await bookingsCollection.deleteOne(query)
        res.send(result);
       })
+ // Update room booking status
+ app.patch('/rooms/status/:id', async (req, res) => {
+  const id = req.params.id
+  const status = req.body.status
+  const query = { _id: new ObjectId(id) }
+  const updateDoc = {
+    $set: {
+      booked: status,
+    },
+  }
+  const result = await roomsCollection.updateOne(query, updateDoc)
+  res.send(result)
+})
+
+
+  // Get all bookings for guest
+app.get('/bookings', async (req, res) => {
+const email = req.query.email
+if (!email) return res.send([])
+const query = { 'guest.email': email }
+const result = await bookingsCollection.find(query).toArray()
+res.send(result)
+})
+// Get all bookings for host
+app.get('/bookings/host', async (req, res) => {
+const email = req.query.email
+if (!email) return res.send([])
+const query = { host: email }
+const result = await bookingsCollection.find(query).toArray()
+res.send(result)
+})
+
+// Get all users
+app.get('/users', async (req, res) => {
+const result = await usersCollection.find().toArray()
+res.send(result)
+})
+
+app.get('/users/:email', async (req, res) => {
+const email = req.params.email
+const result = await usersCollection.findOne({ email })
+res.send(result)
+})
+
+ // Update user role
+ app.put('/users/update/:email', async (req, res) => {
+  const email = req.params.email
+  const user = req.body
+  const query = { email: email }
+  const options = { upsert: true }
+  const updateDoc = {
+    $set: {
+      ...user,
+      timestamp: Date.now(),
+    },
+  }
+  const result = await usersCollection.updateOne(query, updateDoc, options)
+  res.send(result)
+})
 
 
     
